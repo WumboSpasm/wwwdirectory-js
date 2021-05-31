@@ -1,0 +1,36 @@
+:root {
+    text-align: center;
+}
+br {
+	display: block;
+    content: "";
+    margin-bottom: 16px;
+}
+span {
+    font-size: 24px;
+}
+select {
+    max-width: 200px;
+    margin: 0 3px;
+}
+div {
+    margin: 0 auto 32px;
+}
+#info {
+    width: 600px;
+    text-align: justify;
+}
+#center {
+    text-align: center;
+    margin-bottom: 0;
+}
+#results {
+    display: inline-block;
+    width: initial;
+    white-space: pre;
+    text-align: left;
+    margin: -12px auto 8px;
+}
+#results a::after {
+    content: "\A";
+}
