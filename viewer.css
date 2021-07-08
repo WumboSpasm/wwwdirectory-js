@@ -15,6 +15,9 @@ iframe {
     height: 100%;
     border: none;
 }
+label {
+    user-select: none;
+}
 #imageExpand {
     position: fixed;
     width: 100vw;
@@ -48,11 +51,14 @@ iframe {
     word-wrap: break-word;
     font-weight: bold;
 }
-#pageLinks {
-    margin-bottom: 8px;
+#pageOptions {
+    margin: 8px 0 6px;
 }
 #pageNavigation,
 #pageIndex {
     text-align: center;
     margin-top: 16px;
+}
+#localLinks {
+    margin-left: 0;
 }

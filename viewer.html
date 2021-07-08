@@ -16,10 +16,14 @@
                 <img>
                 <div id="pageURL"></div>
                 <div id="pageLinks">
-                    <a>[View on Wayback Machine]</a>
-                    <a>[View live URL]</a>
-                    <a>[View original HTML]</a>
-                    <input type="checkbox" name="textView" id="textView">
+                    <a target="_blank">[View on Wayback Machine]</a>
+                    <a target="_blank">[View live URL]</a>
+                    <a target="_blank">[View original HTML]</a>
+                </div>
+                <div id="pageOptions">
+                    <input type="checkbox" name="localLinks" id="localLinks" autocomplete="off">
+                    <label for="localLinks">Highlight local links</label>
+                    <input type="checkbox" name="textView" id="textView" autocomplete="off">
                     <label for="textView">Plaintext view</label>
                 </div>
                 <div id="pageCategory">

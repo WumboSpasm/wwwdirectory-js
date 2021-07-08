@@ -40,34 +40,35 @@ function updatePage(page) {
         if (i != page[targetID].keyword.length - 1)
             document.querySelector('#pageKeywords').insertAdjacentText('beforeend', ', ');
     }
-    console.log(targetID);
     document.querySelectorAll('#pageNavigation a')[0].href = window.location.pathname + '?url=' + page[(targetID - 1) ? (targetID - 1) : (page.length - 1)].url.replaceAll('#', '%23').replaceAll('&', '%26');
     document.querySelectorAll('#pageNavigation a')[1].href = window.location.pathname + '?url=' + page[Math.floor(Math.random() * 8046) + 1].url.replaceAll('#', '%23').replaceAll('&', '%26');
     document.querySelectorAll('#pageNavigation a')[2].href = window.location.pathname + '?url=' + page[(targetID + 1 == page.length) ? 1 : targetID + 1].url.replaceAll('#', '%23').replaceAll('&', '%26');
-    /*------------------------------+
-     | Make image expand upon click |
-     +------------------------------*/
-    function viewImage() {
-        if (document.querySelector('#imageExpand').hidden)
-            document.querySelector('#imageExpand').hidden = false
-        else
-            document.querySelector('#imageExpand').hidden = true;
-    }
-    document.querySelector('#pageInfo img').addEventListener('click', viewImage);
-    document.querySelector('#imageExpand img').addEventListener('click', viewImage);
+    
+    // Make image expand upon click
+    document.querySelectorAll('img').forEach(pageImage => {
+        pageImage.addEventListener('click', () => {document.querySelector('#imageExpand').hidden ^= true;})
+    });
     /*--------------------+
      | Coolify the iframe |
      +--------------------*/
     let pageFrame = document.querySelector('iframe');
     
+    // "Highlight local links" checkbox handler
+    document.querySelector('#localLinks').addEventListener('click', () => {
+        pageFrame.contentDocument.querySelectorAll('a[local="true"]').forEach(localLink => {
+            localLink.style.filter = document.querySelector('#localLinks').checked ? 'hue-rotate(-120deg)' : 'none';
+        });
+    });
+    
+    // "Plaintext view" checkbox handler
     function toggleTextView() {
-        if (!document.querySelector('#textView').checked) {
-            pageFrame.contentDocument.querySelector('html > pre').remove();
-            pageFrame.contentDocument.body.hidden = false;
-        } else {
-            plainText = pageFrame.contentDocument.body.textContent;
-            pageFrame.contentDocument.body.hidden = true;
-            textContainer = pageFrame.contentDocument.createElement('pre');
+        pageFrame.contentDocument.body.hidden ^= true;
+        
+        if (!document.querySelector('#textView').checked)
+            pageFrame.contentDocument.querySelector('html > pre').remove()
+        else {
+            let plainText = pageFrame.contentDocument.body.textContent;
+            let textContainer = pageFrame.contentDocument.createElement('pre');
             textContainer.style.margin = '8px';
             textContainer.textContent = plainText;
             pageFrame.contentDocument.body.insertAdjacentElement('beforebegin', textContainer);
@@ -76,65 +77,85 @@ function updatePage(page) {
     document.querySelector('#textView').addEventListener('click', toggleTextView);
     
     // This is literally the only way to check the readyState of an iframe
-    setInterval(function() {
+    let frameHandler = setInterval(() => {
         if (pageFrame.contentDocument.readyState === 'interactive') {
+            // Prevent page from loading resources that probably don't exist 25+ years later
             pageFrame.contentWindow.stop();
             
-            // Very rudimentary plaintext detection system, should probably be replaced with a user toggle
+            // Very rudimentary plaintext detection system
             if (pageFrame.contentDocument.querySelectorAll('*').length <= 3) {
                 document.querySelector('#textView').checked = true;
                 toggleTextView();
             }
             
+            // Apply framed page title to parent
             if (pageFrame.contentDocument.querySelector('title'))
                 document.title = pageFrame.contentDocument.querySelector('title').textContent + ' | ' + document.title;
             else
                 document.title = page[targetID].url + ' | ' + document.title;
             
-            if (pageFrame.contentDocument.body.background)
+            // Remove the only image-loading attribute I know of
+            if (pageFrame.contentDocument.body.hasAttribute('background'))
                 pageFrame.contentDocument.body.removeAttribute('background');
             
-            let frameImages = pageFrame.contentDocument.querySelectorAll('img');
-            for (let i = 0; i < frameImages.length; i++) {
-                if (frameImages[i].alt)
-                    frameImages[i].insertAdjacentText('afterend', frameImages[i].alt);
-                frameImages[i].style.display = 'none';
-            }
+            // Replicate functionality of a rare non-standard attribute meant to change the background color
+            if (pageFrame.contentDocument.body.hasAttribute('rgb'))
+                pageFrame.contentDocument.body.style.backgroundColor = pageFrame.contentDocument.body.getAttribute('rgb');
             
+            // Grey out links that haven't been updated yet
+            let pageStyle = document.createElement('style');
+            pageStyle.textContent = 'a[href]:not([href^="#"]):not([local]) {filter: grayscale(1) opacity(0.5)}';
+            pageFrame.contentDocument.documentElement.insertAdjacentElement('afterbegin', pageStyle);
+            
+            // Remove all <img> elements, replace with alt text
+            pageFrame.contentDocument.querySelectorAll('img').forEach(frameImage => {
+                if (frameImage.alt)
+                    frameImage.insertAdjacentText('afterend', frameImage.alt);
+                else
+                    frameImage.insertAdjacentText('afterend', '[image]');
+                frameImage.remove();
+            });
+            
+            // Prevent <base> from screwing with page links
             if (pageFrame.contentDocument.querySelector('base'))
                 pageFrame.contentDocument.querySelector('base').remove();
             
-            let frameLinks = pageFrame.contentDocument.querySelectorAll('a');
-            for (let i = 0; i < frameLinks.length; i++) {
-                // Prevents link replacement algorithm from tanking performance
-                setTimeout(function() {
-                    if (!frameLinks[i].href)
-                        return;
-                    
+            // Redirect links to archival sites
+            pageFrame.contentDocument.querySelectorAll('a[href]').forEach((frameLink, i) => {
+                setTimeout(() => {
                     let currentDomain = new URL(page[targetID].url).origin;
-                    let linkDomain = new URL(frameLinks[i].href).host;
+                    let linkDomain = new URL(frameLink.href).host;
                     
-                    if (!frameLinks[i].getAttribute('href').startsWith('#')) {
-                        // Replaces links with the on-site version if they exist in the archive
-                        if (page.findIndex(obj => obj.url === frameLinks[i].href) != -1)
-                            frameLinks[i].href = window.location.pathname + '?url=' + frameLinks[i].href
-                        else if (frameLinks[i].href.includes('http://'))
-                            if (frameLinks[i].getAttribute('href')[0] == '/')
-                                frameLinks[i].href = 'https://web.archive.org/web/1996fw_/' + currentDomain + frameLinks[i].getAttribute('href')
-                            else if (linkDomain == window.location.hostname)
-                                if (frameLinks[i].href[-1] == '/')
-                                    frameLinks[i].href = 'https://web.archive.org/web/1996fw_/' + page[targetID].url + '/' + frameLinks[i].getAttribute('href')
-                                else
-                                    frameLinks[i].href = 'https://web.archive.org/web/1996fw_/' + page[targetID].url.substring(0, page[targetID].url.lastIndexOf('/') + 1) + frameLinks[i].getAttribute('href')
-                            else
-                                frameLinks[i].href = 'https://web.archive.org/web/1996fw_/' + frameLinks[i].href;
+                    if (!frameLink.getAttribute('href').startsWith('#') && 
+                        !frameLink.getAttribute('href').startsWith('https://web.archive.org/') &&
+                        !frameLink.getAttribute('href').startsWith(window.location.pathname)) {
+                        frameLink.setAttribute('local', 'false');
+                        frameLink.setAttribute('target', '_parent');
                         
-                        frameLinks[i].setAttribute('target', '_parent');
+                        
+                        if (page.findIndex(obj => obj.url === frameLink.href) != -1) {
+                            frameLink.setAttribute('local', 'true');
+                            frameLink.href = window.location.pathname + '?url=' + frameLink.href;
+                            if (document.querySelector('#localLinks').checked == true)
+                                frameLink.style.filter = 'hue-rotate(-120deg)';
+                        } else if (frameLink.href.includes('http://')) {
+                            frameLink.setAttribute('target', '_blank');
+                            
+                            if (frameLink.getAttribute('href')[0] == '/')
+                                frameLink.href = 'https://web.archive.org/web/1996fw_/' + currentDomain + frameLink.getAttribute('href')
+                            else if (linkDomain == window.location.hostname)
+                                if (frameLink.href[-1] == '/')
+                                    frameLink.href = 'https://web.archive.org/web/1996fw_/' + page[targetID].url + '/' + frameLink.getAttribute('href')
+                                else
+                                    frameLink.href = 'https://web.archive.org/web/1996fw_/' + page[targetID].url.substring(0, page[targetID].url.lastIndexOf('/') + 1) + frameLink.getAttribute('href')
+                            else
+                                frameLink.href = 'https://web.archive.org/web/1996fw_/' + frameLink.href;
+                        }
                     }
-                }, 1);
-            }
+                }, i);
+            });
             
-            return;
+            clearInterval(frameHandler);
         }
     }, 1);
 }

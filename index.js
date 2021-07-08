@@ -24,7 +24,7 @@ function populateDropdown(page) {
             }
         }
     }
-    document.querySelector('button').addEventListener('click', function() {
+    document.querySelector('button').addEventListener('click', () => {
         window.location.href = 'results.html?category=' + categorySelect.options[categorySelect.selectedIndex].value;
     });
 }
