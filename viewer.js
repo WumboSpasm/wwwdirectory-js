@@ -99,8 +99,40 @@ function updatePage(page) {
                 pageFrame.contentDocument.body.removeAttribute('background');
             
             // Replicate functionality of a rare non-standard attribute meant to change the background color
+            // Otherwise, make the background black in the case of bright text
             if (pageFrame.contentDocument.body.hasAttribute('rgb'))
-                pageFrame.contentDocument.body.style.backgroundColor = pageFrame.contentDocument.body.getAttribute('rgb');
+                pageFrame.contentDocument.body.style.backgroundColor = pageFrame.contentDocument.body.getAttribute('rgb')
+            else if (pageFrame.contentDocument.body.hasAttribute('text')) {
+                let frameText = pageFrame.contentDocument.body.getAttribute('text').split('');
+                if (frameText[0] == '#')
+                    frameText.splice(0, 1);
+                
+                for (let i = 0; i < frameText.length; i += 2)
+                    if ((frameText[i] + frameText[i + 1]).toUpperCase() == 'FF') {
+                        pageFrame.contentDocument.body.style.backgroundColor = '#000000';
+                        break;
+                    }
+            }
+            
+            // Insert placeholder for <isindex>
+            if (pageFrame.contentDocument.querySelector('isindex')) {
+                let index = document.createElement('form'),
+                    topDivider = document.createElement('hr');
+                
+                index.setAttribute('onsubmit', 'return false');
+                topDivider.setAttribute('style', 'margin-top: 28px');
+                index.appendChild(topDivider);
+                
+                if (pageFrame.contentDocument.querySelector('isindex').hasAttribute('prompt'))
+                    index.insertAdjacentText('beforeend', pageFrame.contentDocument.querySelector('isindex').getAttribute('prompt'));
+                else
+                    index.insertAdjacentText('beforeend', 'This is a searchable index. Enter search keywords: ');
+                
+                index.appendChild(document.createElement('input'));
+                index.appendChild(document.createElement('hr'));
+                
+                pageFrame.contentDocument.querySelector('isindex').insertAdjacentElement('afterbegin', index);
+            }
             
             // Grey out links that haven't been updated yet
             let pageStyle = document.createElement('style');
