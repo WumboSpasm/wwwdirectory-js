@@ -25,7 +25,7 @@ function updatePage(page) {
     document.querySelector('#pageInfo img').src = 'image/' + targetID + '.png';
     document.querySelector('#imageExpand img').src = 'image/' + targetID + '.png';
     document.querySelector('#pageURL').textContent = page[targetID].url;
-    document.querySelectorAll('#pageLinks a')[0].href = 'https://web.archive.org/web/1996/' + page[targetID].url;
+    document.querySelectorAll('#pageLinks a')[0].href = 'https://web.archive.org/web/0/' + page[targetID].url;
     document.querySelectorAll('#pageLinks a')[1].href = page[targetID].url;
     document.querySelectorAll('#pageLinks a')[2].href = 'hypertext/' + targetID + '.htm';
     document.querySelector('#pageCategory a').textContent = page[targetID].category;
