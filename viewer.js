@@ -174,14 +174,14 @@ function updatePage(page) {
                             frameLink.setAttribute('target', '_blank');
                             
                             if (frameLink.getAttribute('href')[0] == '/')
-                                frameLink.href = 'https://web.archive.org/web/1996fw_/' + currentDomain + frameLink.getAttribute('href')
+                                frameLink.href = 'https://web.archive.org/web/0/' + currentDomain + frameLink.getAttribute('href')
                             else if (linkDomain == window.location.hostname)
                                 if (frameLink.href[-1] == '/')
-                                    frameLink.href = 'https://web.archive.org/web/1996fw_/' + page[targetID].url + '/' + frameLink.getAttribute('href')
+                                    frameLink.href = 'https://web.archive.org/web/0/' + page[targetID].url + '/' + frameLink.getAttribute('href')
                                 else
-                                    frameLink.href = 'https://web.archive.org/web/1996fw_/' + page[targetID].url.substring(0, page[targetID].url.lastIndexOf('/') + 1) + frameLink.getAttribute('href')
+                                    frameLink.href = 'https://web.archive.org/web/0/' + page[targetID].url.substring(0, page[targetID].url.lastIndexOf('/') + 1) + frameLink.getAttribute('href')
                             else
-                                frameLink.href = 'https://web.archive.org/web/1996fw_/' + frameLink.href;
+                                frameLink.href = 'https://web.archive.org/web/0/' + frameLink.href;
                         }
                     }
                 }, i);
