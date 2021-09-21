@@ -51,7 +51,8 @@ function updatePage(page) {
     /*--------------------+
      | Coolify the iframe |
      +--------------------*/
-    let pageFrame = document.querySelector('iframe');
+    let pageFrame = document.querySelector('iframe'),
+        frameMarkup;
     
     // "Highlight local links" checkbox handler
     document.querySelector('#localLinks').addEventListener('click', () => {
@@ -60,21 +61,20 @@ function updatePage(page) {
         });
     });
     
-    // "Plaintext view" checkbox handler
-    function toggleTextView() {
+    // "Markup view" checkbox handler
+    function toggleMarkupView() {
         pageFrame.contentDocument.body.hidden ^= true;
         
-        if (!document.querySelector('#textView').checked)
+        if (!document.querySelector('#markupView').checked)
             pageFrame.contentDocument.querySelector('html > pre').remove()
         else {
-            let plainText = pageFrame.contentDocument.body.textContent;
             let textContainer = pageFrame.contentDocument.createElement('pre');
             textContainer.style.margin = '8px';
-            textContainer.textContent = plainText;
+            textContainer.textContent = frameMarkup;
             pageFrame.contentDocument.body.insertAdjacentElement('beforebegin', textContainer);
         }
     }
-    document.querySelector('#textView').addEventListener('click', toggleTextView);
+    document.querySelector('#markupView').addEventListener('click', toggleMarkupView);
     
     // This is literally the only way to check the readyState of an iframe
     let frameHandler = setInterval(() => {
@@ -82,10 +82,17 @@ function updatePage(page) {
             // Prevent page from loading resources that probably don't exist 25+ years later
             pageFrame.contentWindow.stop();
             
-            // Very rudimentary plaintext detection system
-            if (pageFrame.contentDocument.querySelectorAll('*').length <= 3) {
-                document.querySelector('#textView').checked = true;
-                toggleTextView();
+            // Get un-coolified markup of iframe
+            frameMarkup = pageFrame.contentDocument.querySelector(':root').innerHTML;
+            
+            // Detect plaintext detection system
+            if (frameMarkup.substr(0, 19) == '<head></head><body>' && frameMarkup.substr(-7) == '</body>') {
+                frameMarkup = frameMarkup.substr(19, frameMarkup.length - 26);
+                
+                if (pageFrame.contentDocument.querySelectorAll('*').length <= 3) {
+                    document.querySelector('#markupView').checked = true;
+                    toggleMarkupView();
+                }
             }
             
             // Apply framed page title to parent
@@ -120,7 +127,6 @@ function updatePage(page) {
                     topDivider = document.createElement('hr');
                 
                 index.setAttribute('onsubmit', 'return false');
-                topDivider.setAttribute('style', 'margin-top: 28px');
                 index.appendChild(topDivider);
                 
                 if (pageFrame.contentDocument.querySelector('isindex').hasAttribute('prompt'))
@@ -168,7 +174,9 @@ function updatePage(page) {
                         if (page.findIndex(obj => obj.url === frameLink.href) != -1) {
                             frameLink.setAttribute('local', 'true');
                             frameLink.href = window.location.pathname + '?url=' + frameLink.href;
-                            if (document.querySelector('#localLinks').checked == true)
+                            if (document.querySelector('#localLinks').disabled)
+                                document.querySelector('#localLinks').disabled = false;
+                            if (document.querySelector('#localLinks').checked)
                                 frameLink.style.filter = 'hue-rotate(-120deg)';
                         } else if (frameLink.href.includes('http://')) {
                             frameLink.setAttribute('target', '_blank');

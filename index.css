@@ -16,6 +16,12 @@ select {
 div {
     margin: 0 auto 32px;
 }
+ul {
+    margin: 16px 72px 24px;
+}
+li {
+    margin-bottom: 2px;
+}
 #info {
     width: 600px;
     text-align: justify;
