@@ -62,3 +62,7 @@ label {
 #localLinks {
     margin-left: 0;
 }
+#pageDomain,
+#pageCategory {
+    margin-bottom: 4px;
+}

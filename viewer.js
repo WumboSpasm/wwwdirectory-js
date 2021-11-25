@@ -28,6 +28,8 @@ function updatePage(page) {
     document.querySelectorAll('#pageLinks a')[0].href = 'https://web.archive.org/web/0/' + page[targetID].url;
     document.querySelectorAll('#pageLinks a')[1].href = page[targetID].url;
     document.querySelectorAll('#pageLinks a')[2].href = 'hypertext/' + targetID + '.htm';
+    document.querySelector('#pageDomain a').textContent = page[targetID].url.substr(7, page[targetID].url.indexOf('/', 7) - 7);
+    document.querySelector('#pageDomain a').href = 'results.html?domain=' + document.querySelector('#pageDomain a').textContent;
     document.querySelector('#pageCategory a').textContent = page[targetID].category;
     document.querySelector('#pageCategory a').href = 'results.html?category=' + page[targetID].category;
     for (let i = 0; i < page[targetID].keyword.length; i++) {
@@ -85,7 +87,7 @@ function updatePage(page) {
             // Get un-coolified markup of iframe
             frameMarkup = pageFrame.contentDocument.querySelector(':root').innerHTML;
             
-            // Detect plaintext detection system
+            // Detect plaintext and toggle markup
             if (frameMarkup.substr(0, 19) == '<head></head><body>' && frameMarkup.substr(-7) == '</body>') {
                 frameMarkup = frameMarkup.substr(19, frameMarkup.length - 26);
                 
@@ -119,6 +121,14 @@ function updatePage(page) {
                         pageFrame.contentDocument.body.style.backgroundColor = '#000000';
                         break;
                     }
+            }
+            
+            // Disable all HTML forms
+            if (pageFrame.contentDocument.querySelector('form')) {
+                let frameForm = pageFrame.contentDocument.querySelectorAll('form');
+                
+                for (let i = 0; i < frameForm.length; i++)
+                    frameForm[i].replaceWith(...frameForm[i].childNodes);
             }
             
             // Insert placeholder for <isindex>

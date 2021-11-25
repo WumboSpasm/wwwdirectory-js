@@ -9,8 +9,9 @@ br {
 span {
     font-size: 24px;
 }
-select {
-    max-width: 200px;
+select,
+input {
+    width: 200px;
     margin: 0 3px;
 }
 div {
@@ -30,12 +31,15 @@ li {
     text-align: center;
     margin-bottom: 0;
 }
+#resultsHeader {
+    margin: 0 auto 20px;
+}
 #results {
     display: inline-block;
     width: initial;
     white-space: pre;
     text-align: left;
-    margin: -12px auto 8px;
+    margin-bottom: 8px;
 }
 #results a::after {
     content: "\A";

@@ -7,11 +7,13 @@ request.responseType = 'json';
 request.onload = function() {populateDropdown(this.response)};
 request.send();
 
+/*------------------------+
+ | Handle category search |
+ +------------------------*/
 function populateDropdown(page) {
     let categorySelect = document.querySelector('#category');
-    /*-------------------------------------+
-     | Populate dropdown menu with options |
-     +-------------------------------------*/
+    
+    // Populate dropdown menu with options
     for (let i = 1; i <= 8046; i++) {
         for (let j = 0; j < categorySelect.options.length; j++) {
             if (categorySelect.options[j].value == page[i].category)
@@ -28,3 +30,15 @@ function populateDropdown(page) {
         window.location.href = 'results.html?category=' + categorySelect.options[categorySelect.selectedIndex].value;
     });
 }
+
+/*----------------------+
+ | Handle domain search |
+ +----------------------*/
+document.querySelectorAll('button')[1].addEventListener('click', () => {
+    if (document.querySelector('#domain').value)
+        window.location.href = 'results.html?domain=' + document.querySelector('#domain').value;
+});
+document.querySelector('#domain').addEventListener('keydown', key => {
+    if (key.code == 'Enter' && document.querySelector('#domain').value)
+        window.location.href = 'results.html?domain=' + document.querySelector('#domain').value;
+});
