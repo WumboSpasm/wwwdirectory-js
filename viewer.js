@@ -59,7 +59,7 @@ function updatePage(page) {
     // "Highlight local links" checkbox handler
     document.querySelector('#localLinks').addEventListener('click', () => {
         pageFrame.contentDocument.querySelectorAll('a[local="true"]').forEach(localLink => {
-            localLink.style.filter = document.querySelector('#localLinks').checked ? 'hue-rotate(-120deg)' : 'none';
+            localLink.style.filter = document.querySelector('#localLinks').checked ? 'hue-rotate(60deg) saturate(1.5)' : 'none';
         });
     });
     
@@ -71,6 +71,7 @@ function updatePage(page) {
             pageFrame.contentDocument.querySelector('html > pre').remove()
         else {
             let textContainer = pageFrame.contentDocument.createElement('pre');
+            textContainer.style.whiteSpace = 'pre-line';
             textContainer.style.margin = '8px';
             textContainer.textContent = frameMarkup;
             pageFrame.contentDocument.body.insertAdjacentElement('beforebegin', textContainer);
@@ -110,12 +111,12 @@ function updatePage(page) {
             // Replicate functionality of a rare non-standard attribute meant to change the background color
             // Otherwise, make the background black in the case of bright text
             if (pageFrame.contentDocument.body.hasAttribute('rgb'))
-                pageFrame.contentDocument.body.style.backgroundColor = pageFrame.contentDocument.body.getAttribute('rgb')
-            else if (pageFrame.contentDocument.body.hasAttribute('text')) {
+                pageFrame.contentDocument.body.style.backgroundColor = pageFrame.contentDocument.body.getAttribute('rgb');
+            if (pageFrame.contentDocument.body.getAttribute('text')) {
                 let frameText = pageFrame.contentDocument.body.getAttribute('text').split('');
                 if (frameText[0] == '#')
                     frameText.splice(0, 1);
-                
+
                 for (let i = 0; i < frameText.length; i += 2)
                     if ((frameText[i] + frameText[i + 1]).toUpperCase() == 'FF') {
                         pageFrame.contentDocument.body.style.backgroundColor = '#000000';
@@ -187,7 +188,7 @@ function updatePage(page) {
                             if (document.querySelector('#localLinks').disabled)
                                 document.querySelector('#localLinks').disabled = false;
                             if (document.querySelector('#localLinks').checked)
-                                frameLink.style.filter = 'hue-rotate(-120deg)';
+                                frameLink.style.filter = 'hue-rotate(60deg) saturate(1.5)';
                         } else if (frameLink.href.includes('http://')) {
                             frameLink.setAttribute('target', '_blank');
                             
