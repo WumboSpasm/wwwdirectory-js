@@ -104,16 +104,17 @@ function updatePage(list) {
             // Get un-coolified markup of iframe
             frameMarkup = pageFrame.contentDocument.documentElement.innerHTML;
             
-            // Detect plaintext and toggle markup
+            // Remove auto-generated tags in markup view
             if (frameMarkup.startsWith('<head></head><body>') && frameMarkup.endsWith('</body>')) {
                 frameMarkupRaw = frameMarkup.substr(19, frameMarkup.length - 26);
                 
+                // Assume plaintext and enable markup view if page has no tags
                 if (pageFrame.contentDocument.querySelectorAll('*').length <= 3) {
                     document.querySelector('#markupView').checked = true;
                     toggleMarkupView();
+                    // We don't need to perform operations on code that doesn't exist
+                    return;
                 }
-                
-                return;
             }
             else
                 frameMarkupRaw = frameMarkup;
@@ -148,7 +149,7 @@ function updatePage(list) {
             }
             
             pageFrame.contentDocument.documentElement.innerHTML = frameMarkup;
-                
+            
             // Apply framed page title to parent
             if (pageFrame.contentDocument.querySelector('title'))
                 document.title = pageFrame.contentDocument.querySelector('title').textContent + ' | ' + document.title;
