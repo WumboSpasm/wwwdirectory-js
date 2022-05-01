@@ -48,8 +48,10 @@ label {
     margin-bottom: 4px;
 }
 #pageURL {
-    word-wrap: break-word;
-    font-weight: bold;
+    margin-bottom: 4px;
+}
+#pageURL span {
+    display: inline-block;
 }
 #pageOptions {
     margin: 8px 0 6px;
@@ -62,7 +64,6 @@ label {
 #localLinks {
     margin-left: 0;
 }
-#pageDomain,
 #pageCategory {
     margin-bottom: 4px;
 }

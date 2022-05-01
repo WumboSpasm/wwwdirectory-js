@@ -2,64 +2,79 @@
  | Retrieve JSON data |
  +--------------------*/
 let request = new XMLHttpRequest();
-request.open('GET', 'metadata.json');
+request.open('GET', 'list.json');
 request.responseType = 'json';
 request.onload = function() {updatePage(this.response)};
 request.send();
 
-function updatePage(page) {
+function updatePage(list) {
     /*------------------+
      | Get query string |
      +------------------*/
     let query = new URLSearchParams(location.search);
-    let targetID = page.findIndex(obj => obj.url === query.get('url'));
+    // Get index of specified URL in list (reflective of filenames)
+    let targetID = list.findIndex(obj => obj.url === query.get('url'));
+    // Redirect to homepage if URL doesn't exist in list
     if (targetID < 1) {
         alert('Invalid URL!');
         window.location.replace('index.html');
         return;
     }
+    
     /*-----------------------+
      | Insert data into page |
      +-----------------------*/
+    // Change iframe URL and sidebar image to that of specified page
     document.querySelector('iframe').contentWindow.location.replace('hypertext/' + targetID + '.htm');
     document.querySelector('#pageInfo img').src = 'image/' + targetID + '.png';
     document.querySelector('#imageExpand img').src = 'image/' + targetID + '.png';
-    document.querySelector('#pageURL').textContent = page[targetID].url;
-    document.querySelectorAll('#pageLinks a')[0].href = 'https://web.archive.org/web/0/' + page[targetID].url;
-    document.querySelectorAll('#pageLinks a')[1].href = page[targetID].url;
+    // URL text
+    document.querySelector('#pageURL b').textContent = list[targetID].url;
+    // [Search domain]
+    document.querySelector('#pageURL a').href = 'results.html?domain=' + list[targetID].url.substr(7, list[targetID].url.indexOf('/', 7) - 7);
+    // [View on Wayback Machine]
+    document.querySelectorAll('#pageLinks a')[0].href = 'https://web.archive.org/web/0/' + list[targetID].url;
+    // [View live URL]
+    document.querySelectorAll('#pageLinks a')[1].href = list[targetID].url;
+    // [View raw HTML]
     document.querySelectorAll('#pageLinks a')[2].href = 'hypertext/' + targetID + '.htm';
-    document.querySelector('#pageDomain a').textContent = page[targetID].url.substr(7, page[targetID].url.indexOf('/', 7) - 7);
-    document.querySelector('#pageDomain a').href = 'results.html?domain=' + document.querySelector('#pageDomain a').textContent;
-    document.querySelector('#pageCategory a').textContent = page[targetID].category;
-    document.querySelector('#pageCategory a').href = 'results.html?category=' + page[targetID].category;
-    for (let i = 0; i < page[targetID].keyword.length; i++) {
+    // Category
+    document.querySelector('#pageCategory a').textContent = list[targetID].category;
+    document.querySelector('#pageCategory a').href = 'results.html?category=' + list[targetID].category;
+    // Keywords
+    for (let i = 0; i < list[targetID].keyword.length; i++) {
         let keywordLink = document.createElement('a');
-        keywordLink.textContent = page[targetID].keyword[i];
-        keywordLink.href = 'results.html?keyword=' + page[targetID].keyword[i].replaceAll('&', '%26');
+        keywordLink.textContent = list[targetID].keyword[i];
+        keywordLink.href = 'results.html?keyword=' + list[targetID].keyword[i].replaceAll('&', '%26');
         
         document.querySelector('#pageKeywords').insertAdjacentElement('beforeend', keywordLink);
         
-        if (i != page[targetID].keyword.length - 1)
+        if (i != list[targetID].keyword.length - 1)
             document.querySelector('#pageKeywords').insertAdjacentText('beforeend', ', ');
     }
-    document.querySelectorAll('#pageNavigation a')[0].href = window.location.pathname + '?url=' + page[(targetID - 1) ? (targetID - 1) : (page.length - 1)].url.replaceAll('#', '%23').replaceAll('&', '%26');
-    document.querySelectorAll('#pageNavigation a')[1].href = window.location.pathname + '?url=' + page[Math.floor(Math.random() * 8046) + 1].url.replaceAll('#', '%23').replaceAll('&', '%26');
-    document.querySelectorAll('#pageNavigation a')[2].href = window.location.pathname + '?url=' + page[(targetID + 1 == page.length) ? 1 : targetID + 1].url.replaceAll('#', '%23').replaceAll('&', '%26');
+    // Previous URL
+    document.querySelectorAll('#pageNavigation a')[0].href = window.location.pathname + '?url=' + list[(targetID - 1) ? (targetID - 1) : (list.length - 1)].url.replaceAll('#', '%23').replaceAll('&', '%26');
+    // Random URL
+    document.querySelectorAll('#pageNavigation a')[1].href = window.location.pathname + '?url=' + list[Math.floor(Math.random() * 8046) + 1].url.replaceAll('#', '%23').replaceAll('&', '%26');
+    // Next URL
+    document.querySelectorAll('#pageNavigation a')[2].href = window.location.pathname + '?url=' + list[(targetID + 1 == list.length) ? 1 : targetID + 1].url.replaceAll('#', '%23').replaceAll('&', '%26');
     
     // Make image expand upon click
     document.querySelectorAll('img').forEach(pageImage => {
         pageImage.addEventListener('click', () => {document.querySelector('#imageExpand').hidden ^= true;})
     });
+    
     /*--------------------+
      | Coolify the iframe |
      +--------------------*/
     let pageFrame = document.querySelector('iframe'),
-        frameMarkup;
+        frameMarkup,
+        frameMarkupRaw;
     
     // "Highlight local links" checkbox handler
     document.querySelector('#localLinks').addEventListener('click', () => {
-        pageFrame.contentDocument.querySelectorAll('a[local="true"]').forEach(localLink => {
-            localLink.style.filter = document.querySelector('#localLinks').checked ? 'hue-rotate(60deg) saturate(1.5)' : 'none';
+        pageFrame.contentDocument.querySelectorAll('a[local="false"]').forEach(frameLink => {
+            frameLink.style.opacity = document.querySelector('#localLinks').checked ? '0.2' : '1';
         });
     });
     
@@ -68,12 +83,13 @@ function updatePage(page) {
         pageFrame.contentDocument.body.hidden ^= true;
         
         if (!document.querySelector('#markupView').checked)
-            pageFrame.contentDocument.querySelector('html > pre').remove()
+            pageFrame.contentDocument.querySelector('html > pre').remove();
         else {
             let textContainer = pageFrame.contentDocument.createElement('pre');
-            textContainer.style.whiteSpace = 'pre-line';
+            textContainer.style.whiteSpace = 'pre-wrap';
             textContainer.style.margin = '8px';
-            textContainer.textContent = frameMarkup;
+            textContainer.textContent = frameMarkupRaw;
+            
             pageFrame.contentDocument.body.insertAdjacentElement('beforebegin', textContainer);
         }
     }
@@ -86,43 +102,66 @@ function updatePage(page) {
             pageFrame.contentWindow.stop();
             
             // Get un-coolified markup of iframe
-            frameMarkup = pageFrame.contentDocument.querySelector(':root').innerHTML;
+            frameMarkup = pageFrame.contentDocument.documentElement.innerHTML;
             
             // Detect plaintext and toggle markup
-            if (frameMarkup.substr(0, 19) == '<head></head><body>' && frameMarkup.substr(-7) == '</body>') {
-                frameMarkup = frameMarkup.substr(19, frameMarkup.length - 26);
+            if (frameMarkup.startsWith('<head></head><body>') && frameMarkup.endsWith('</body>')) {
+                frameMarkupRaw = frameMarkup.substr(19, frameMarkup.length - 26);
                 
                 if (pageFrame.contentDocument.querySelectorAll('*').length <= 3) {
                     document.querySelector('#markupView').checked = true;
                     toggleMarkupView();
                 }
+                
+                return;
+            }
+            else
+                frameMarkupRaw = frameMarkup;
+            
+            // Fix bad formatting that can hide large portions of a page in modern browsers
+            let lessThan = frameMarkup.indexOf('<');
+            
+            while (lessThan != -1) {
+                let commentStart = frameMarkup.indexOf('<!--', lessThan),
+                    commentEnd = frameMarkup.indexOf('-->', commentStart),
+                    greaterThan = frameMarkup.indexOf('>', lessThan);
+                
+                // Check for and fix comments without ending double hyphen
+                if (lessThan == commentStart && commentStart != -1 && commentEnd != greaterThan - 2) {
+                    let commentStartNext = frameMarkup.indexOf('<!--', commentStart + 1);
+                    
+                    if (commentStartNext > commentEnd || commentStartNext == -1)
+                        frameMarkup = frameMarkup.substring(0, commentEnd) + frameMarkup.substring(commentEnd + 3, frameMarkup.length);
+                    
+                    frameMarkup = frameMarkup.substring(0, greaterThan) + '--' + frameMarkup.substring(greaterThan, frameMarkup.length);
+                }
+                // Check for and fix HTML attributes without ending quotation mark
+                else {
+                    let innerElement = frameMarkup.substring(lessThan + 1, greaterThan),
+                        attributeStart = innerElement.lastIndexOf('="');
+                    
+                    if (attributeStart != -1 && innerElement.indexOf('"', attributeStart + 2) == -1)
+                        frameMarkup = frameMarkup.substring(0, greaterThan) + '"' + frameMarkup.substring(greaterThan, frameMarkup.length);
+                }
+                
+                lessThan = frameMarkup.indexOf('<', lessThan + 1);
             }
             
+            pageFrame.contentDocument.documentElement.innerHTML = frameMarkup;
+                
             // Apply framed page title to parent
             if (pageFrame.contentDocument.querySelector('title'))
                 document.title = pageFrame.contentDocument.querySelector('title').textContent + ' | ' + document.title;
             else
-                document.title = page[targetID].url + ' | ' + document.title;
+                document.title = list[targetID].url + ' | ' + document.title;
             
             // Remove the only image-loading attribute I know of
             if (pageFrame.contentDocument.body.hasAttribute('background'))
                 pageFrame.contentDocument.body.removeAttribute('background');
             
             // Replicate functionality of a rare non-standard attribute meant to change the background color
-            // Otherwise, make the background black in the case of bright text
             if (pageFrame.contentDocument.body.hasAttribute('rgb'))
                 pageFrame.contentDocument.body.style.backgroundColor = pageFrame.contentDocument.body.getAttribute('rgb');
-            if (pageFrame.contentDocument.body.getAttribute('text')) {
-                let frameText = pageFrame.contentDocument.body.getAttribute('text').split('');
-                if (frameText[0] == '#')
-                    frameText.splice(0, 1);
-
-                for (let i = 0; i < frameText.length; i += 2)
-                    if ((frameText[i] + frameText[i + 1]).toUpperCase() == 'FF') {
-                        pageFrame.contentDocument.body.style.backgroundColor = '#000000';
-                        break;
-                    }
-            }
             
             // Disable all HTML forms
             if (pageFrame.contentDocument.querySelector('form')) {
@@ -154,14 +193,16 @@ function updatePage(page) {
             // Grey out links that haven't been updated yet
             let pageStyle = document.createElement('style');
             pageStyle.textContent = 'a[href]:not([href^="#"]):not([local]) {filter: grayscale(1) opacity(0.5)}';
+            
             pageFrame.contentDocument.documentElement.insertAdjacentElement('afterbegin', pageStyle);
             
             // Remove all <img> elements, replace with alt text
             pageFrame.contentDocument.querySelectorAll('img').forEach(frameImage => {
                 if (frameImage.alt)
                     frameImage.insertAdjacentText('afterend', frameImage.alt);
-                else
-                    frameImage.insertAdjacentText('afterend', '[image]');
+                else if (frameImage.src && frameImage.src.length > 1)
+                    frameImage.insertAdjacentText('afterend', ' ' + frameImage.src.substring(frameImage.src.lastIndexOf("/") + 1) + ' ');
+                
                 frameImage.remove();
             });
             
@@ -172,35 +213,36 @@ function updatePage(page) {
             // Redirect links to archival sites
             pageFrame.contentDocument.querySelectorAll('a[href]').forEach((frameLink, i) => {
                 setTimeout(() => {
-                    let currentDomain = new URL(page[targetID].url).origin;
-                    let linkDomain = new URL(frameLink.href).host;
-                    
-                    if (!frameLink.getAttribute('href').startsWith('#') && 
-                        !frameLink.getAttribute('href').startsWith('https://web.archive.org/') &&
-                        !frameLink.getAttribute('href').startsWith(window.location.pathname)) {
+                    // Make sure link isn't an anchor
+                    if (!frameLink.getAttribute('href').startsWith('#')) {
                         frameLink.setAttribute('local', 'false');
-                        frameLink.setAttribute('target', '_parent');
+                        frameLink.setAttribute('target', '_blank');
                         
-                        
-                        if (page.findIndex(obj => obj.url === frameLink.href) != -1) {
+                        // Check if destination exists within the archive
+                        if (list.findIndex(obj => obj.url === frameLink.href) != -1) {
                             frameLink.setAttribute('local', 'true');
+                            frameLink.setAttribute('target', '_parent');
+                            
                             frameLink.href = window.location.pathname + '?url=' + frameLink.href;
+                            
                             if (document.querySelector('#localLinks').disabled)
                                 document.querySelector('#localLinks').disabled = false;
-                            if (document.querySelector('#localLinks').checked)
-                                frameLink.style.filter = 'hue-rotate(60deg) saturate(1.5)';
                         } else if (frameLink.href.includes('http://')) {
-                            frameLink.setAttribute('target', '_blank');
+                            let currentDomain = new URL(list[targetID].url).origin,
+                                linkDomain = new URL(frameLink.href).host;
                             
-                            if (frameLink.getAttribute('href')[0] == '/')
-                                frameLink.href = 'https://web.archive.org/web/0/' + currentDomain + frameLink.getAttribute('href')
-                            else if (linkDomain == window.location.hostname)
+                            if (frameLink.getAttribute('href').startsWith('/'))
+                                frameLink.href = 'https://web.archive.org/web/0/' + currentDomain + frameLink.getAttribute('href');
+                            else if (linkDomain == window.location.hostname) {
                                 if (frameLink.href[-1] == '/')
-                                    frameLink.href = 'https://web.archive.org/web/0/' + page[targetID].url + '/' + frameLink.getAttribute('href')
+                                    frameLink.href = 'https://web.archive.org/web/0/' + list[targetID].url + '/' + frameLink.getAttribute('href');
                                 else
-                                    frameLink.href = 'https://web.archive.org/web/0/' + page[targetID].url.substring(0, page[targetID].url.lastIndexOf('/') + 1) + frameLink.getAttribute('href')
-                            else
+                                    frameLink.href = 'https://web.archive.org/web/0/' + list[targetID].url.substring(0, list[targetID].url.lastIndexOf('/') + 1) + frameLink.getAttribute('href');
+                            } else
                                 frameLink.href = 'https://web.archive.org/web/0/' + frameLink.href;
+                            
+                            if (document.querySelector('#localLinks').checked)
+                                frameLink.style.opacity = '0.2';
                         }
                     }
                 }, i);
