@@ -11,25 +11,38 @@ span {
 }
 select,
 input {
-    width: 200px;
     margin: 0 3px;
 }
-div {
-    margin: 0 auto 32px;
+select {
+    width: 200px;
 }
-ul {
-    margin: 16px 72px 24px;
-}
-li {
-    margin-bottom: 2px;
+input {
+    width: 192px;
 }
 #info {
     width: 600px;
     text-align: justify;
+    margin: 0 auto 32px;
 }
 #center {
     text-align: center;
-    margin-bottom: 0;
+    margin-top: 20px;
+}
+#search {
+    display: inline-block;
+    text-align: right;
+}
+#search br {
+    margin: 4px;
+    line-height: 0;
+}
+#highlights {
+    width: 400px;
+    text-align: center;
+    margin: 20px auto 0;
+}
+#highlights a {
+    display: inline-block;
 }
 #resultsHeader {
     margin: 0 auto 20px;

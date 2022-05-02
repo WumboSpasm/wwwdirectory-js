@@ -1,11 +1,11 @@
 /*--------------------+
  | Retrieve JSON data |
  +--------------------*/
-let request = new XMLHttpRequest();
-request.open('GET', 'list.json');
-request.responseType = 'json';
-request.onload = function() {updatePage(this.response)};
-request.send();
+let listRequest = new XMLHttpRequest();
+listRequest.open('GET', 'list.json');
+listRequest.responseType = 'json';
+listRequest.onload = function() {updatePage(this.response)};
+listRequest.send();
 
 function updatePage(list) {
     /*------------------+
@@ -21,11 +21,9 @@ function updatePage(list) {
         return;
     }
     
-    /*-----------------------+
-     | Insert data into page |
-     +-----------------------*/
-    // Change iframe URL and sidebar image to that of specified page
-    document.querySelector('iframe').contentWindow.location.replace('hypertext/' + targetID + '.htm');
+    /*--------------------------+
+     | Insert data into sidebar |
+     +--------------------------*/
     document.querySelector('#pageInfo img').src = 'image/' + targetID + '.png';
     document.querySelector('#imageExpand img').src = 'image/' + targetID + '.png';
     // URL text
@@ -64,192 +62,182 @@ function updatePage(list) {
         pageImage.addEventListener('click', () => {document.querySelector('#imageExpand').hidden ^= true;})
     });
     
-    /*--------------------+
-     | Coolify the iframe |
-     +--------------------*/
-    let pageFrame = document.querySelector('iframe'),
-        frameMarkup,
-        frameMarkupRaw;
+    /*----------------+
+     | Load page data |
+     +----------------*/
+    let pageRequest = new XMLHttpRequest();
+    pageRequest.open('GET', 'hypertext/' + targetID + '.htm');
+    pageRequest.responseType = 'text';
+    pageRequest.send();
     
-    // "Highlight local links" checkbox handler
-    document.querySelector('#localLinks').addEventListener('click', () => {
-        pageFrame.contentDocument.querySelectorAll('a[local="false"]').forEach(frameLink => {
-            frameLink.style.opacity = document.querySelector('#localLinks').checked ? '0.2' : '1';
+    pageRequest.onload = function() {
+        /*-------------------+
+         | Handle checkboxes |
+         +-------------------*/
+        // Emphasize local links
+        document.querySelector('#localLinks').addEventListener('click', () => {
+            document.querySelectorAll('div#page a[local="false"]').forEach(pageLink => {
+                pageLink.style.opacity = document.querySelector('#localLinks').checked ? '0.2' : '1';
+            });
         });
-    });
-    
-    // "Markup view" checkbox handler
-    function toggleMarkupView() {
-        pageFrame.contentDocument.body.hidden ^= true;
         
-        if (!document.querySelector('#markupView').checked)
-            pageFrame.contentDocument.querySelector('html > pre').remove();
-        else {
-            let textContainer = pageFrame.contentDocument.createElement('pre');
-            textContainer.style.whiteSpace = 'pre-wrap';
-            textContainer.style.margin = '8px';
-            textContainer.textContent = frameMarkupRaw;
-            
-            pageFrame.contentDocument.body.insertAdjacentElement('beforebegin', textContainer);
+        // Markup view
+        function toggleMarkupView() {
+            document.querySelector('div#page').hidden ^= true;
+            document.querySelector('pre#page').hidden ^= true;
         }
-    }
-    document.querySelector('#markupView').addEventListener('click', toggleMarkupView);
-    
-    // This is literally the only way to check the readyState of an iframe
-    let frameHandler = setInterval(() => {
-        if (pageFrame.contentDocument.readyState === 'interactive') {
-            // Prevent page from loading resources that probably don't exist 25+ years later
-            pageFrame.contentWindow.stop();
+        
+        document.querySelector('#markupView').addEventListener('click', toggleMarkupView);
+        
+        /*----------------------+
+         | Handle embedded page |
+         +----------------------*/
+        let pageMarkup = this.response;
+        document.querySelector('pre#page').textContent = pageMarkup;
+        
+        // Fix bad formatting that can hide large portions of a page in modern browsers
+        let lessThan = pageMarkup.indexOf('<');
+        
+        while (lessThan != -1) {
+            let commentStart = pageMarkup.indexOf('<!--', lessThan),
+                commentEnd = pageMarkup.indexOf('-->', commentStart),
+                greaterThan = pageMarkup.indexOf('>', lessThan);
             
-            // Get un-coolified markup of iframe
-            frameMarkup = pageFrame.contentDocument.documentElement.innerHTML;
-            
-            // Remove auto-generated tags in markup view
-            if (frameMarkup.startsWith('<head></head><body>') && frameMarkup.endsWith('</body>')) {
-                frameMarkupRaw = frameMarkup.substr(19, frameMarkup.length - 26);
+            // Check for and fix comments without ending double hyphen
+            if (lessThan == commentStart && commentStart != -1 && commentEnd != greaterThan - 2)
+                pageMarkup = pageMarkup.substring(0, greaterThan) + '--' + pageMarkup.substring(greaterThan, pageMarkup.length);
+            // Check for and fix HTML attributes without ending quotation mark
+            else {
+                let innerElement = pageMarkup.substring(lessThan + 1, greaterThan),
+                    attributeStart = innerElement.lastIndexOf('="');
                 
-                // Assume plaintext and enable markup view if page has no tags
-                if (pageFrame.contentDocument.querySelectorAll('*').length <= 3) {
-                    document.querySelector('#markupView').checked = true;
-                    toggleMarkupView();
-                    // We don't need to perform operations on code that doesn't exist
-                    return;
-                }
+                if (attributeStart != -1 && innerElement.indexOf('"', attributeStart + 2) == -1)
+                    pageMarkup = pageMarkup.substring(0, greaterThan) + '"' + pageMarkup.substring(greaterThan, pageMarkup.length);
             }
+            
+            lessThan = pageMarkup.indexOf('<', lessThan + 1);
+        }
+        
+        let pageDocument = new DOMParser().parseFromString(pageMarkup, 'text/html');
+        
+        // Assume plaintext and enable markup view if page has no tags
+        if (pageDocument.querySelectorAll('*').length <= 3) {
+            document.querySelector('#markupView').checked = true;
+            toggleMarkupView();
+            // We don't need to make changes to HTML elements that don't exist
+            document.querySelector('div#page').innerHTML = pageDocument.documentElement.innerHTML;
+            return;
+        }
+        
+        // Apply page title to parent
+        if (pageDocument.querySelector('title'))
+            document.title = pageDocument.querySelector('title').textContent + ' | ' + document.title;
+        else
+            document.title = list[targetID].url + ' | ' + document.title;
+        
+        // Remove the only image-loading attribute I know of
+        if (pageDocument.body.hasAttribute('background'))
+            pageDocument.body.removeAttribute('background');
+        
+        // Replicate functionality of a rare non-standard attribute meant to change the background color
+        if (pageDocument.body.hasAttribute('rgb'))
+            pageDocument.body.style.backgroundColor = pageDocument.body.getAttribute('rgb');
+        
+        // Disable all HTML forms
+        if (pageDocument.querySelector('form')) {
+            let pageForm = pageDocument.querySelectorAll('form');
+            
+            for (let i = 0; i < pageForm.length; i++)
+                pageForm[i].replaceWith(...pageForm[i].childNodes);
+        }
+        
+        // Insert placeholder for <isindex>
+        if (pageDocument.querySelector('isindex')) {
+            let index = document.createElement('form'),
+                topDivider = document.createElement('hr');
+            
+            index.setAttribute('onsubmit', 'return false');
+            index.appendChild(topDivider);
+            
+            if (pageDocument.querySelector('isindex').hasAttribute('prompt'))
+                index.insertAdjacentText('beforeend', pageDocument.querySelector('isindex').getAttribute('prompt'));
             else
-                frameMarkupRaw = frameMarkup;
+                index.insertAdjacentText('beforeend', 'This is a searchable index. Enter search keywords: ');
             
-            // Fix bad formatting that can hide large portions of a page in modern browsers
-            let lessThan = frameMarkup.indexOf('<');
+            index.appendChild(document.createElement('input'));
+            index.appendChild(document.createElement('hr'));
             
-            while (lessThan != -1) {
-                let commentStart = frameMarkup.indexOf('<!--', lessThan),
-                    commentEnd = frameMarkup.indexOf('-->', commentStart),
-                    greaterThan = frameMarkup.indexOf('>', lessThan);
-                
-                // Check for and fix comments without ending double hyphen
-                if (lessThan == commentStart && commentStart != -1 && commentEnd != greaterThan - 2) {
-                    let commentStartNext = frameMarkup.indexOf('<!--', commentStart + 1);
+            pageDocument.querySelector('isindex').insertAdjacentElement('afterbegin', index);
+        }
+        
+        // Remove all <img> elements, replace with alt text
+        pageDocument.querySelectorAll('img').forEach(pageImage => {
+            if (pageImage.alt)
+                pageImage.insertAdjacentText('afterend', pageImage.alt);
+            else if (pageImage.src && pageImage.src.length > 1)
+                pageImage.insertAdjacentText('afterend', ' ' + pageImage.src.substring(pageImage.src.lastIndexOf("/") + 1) + ' ');
+            
+            pageImage.remove();
+        });
+        
+        // Fix <marquee> instances using a very old and unsupported format
+        pageDocument.querySelectorAll('marquee').forEach(oldMarquee => {
+            let newMarquee = document.createElement('marquee');
+            newMarquee.textContent = oldMarquee.getAttribute('text');
+            
+            oldMarquee.replaceWith(newMarquee, ...oldMarquee.childNodes);
+        });
+        
+        // Remove unneeded HTML tags/elements
+        let unneededElements = [ 'head', 'header', 'link' ],
+            unneededTags = [ 'title', 'base' ];
+        
+        pageDocument.querySelectorAll('*').forEach(node => {
+            if (unneededElements.includes(node.nodeName.toLowerCase()))
+                node.replaceWith(...node.childNodes);
+            else if (unneededTags.includes(node.nodeName.toLowerCase()))
+                node.remove();
+        });
+        
+        // Apply modified HTML to div
+        document.querySelector('div#page').innerHTML = pageDocument.documentElement.innerHTML;
+        
+        // Redirect links to archival sites
+        document.querySelectorAll('div#page a[href]').forEach((pageLink) => {
+            setTimeout(() => {
+                // Make sure link isn't an anchor
+                if (!pageLink.getAttribute('href').startsWith('#')) {
+                    pageLink.setAttribute('local', 'false');
+                    pageLink.setAttribute('target', '_blank');
                     
-                    if (commentStartNext > commentEnd || commentStartNext == -1)
-                        frameMarkup = frameMarkup.substring(0, commentEnd) + frameMarkup.substring(commentEnd + 3, frameMarkup.length);
-                    
-                    frameMarkup = frameMarkup.substring(0, greaterThan) + '--' + frameMarkup.substring(greaterThan, frameMarkup.length);
-                }
-                // Check for and fix HTML attributes without ending quotation mark
-                else {
-                    let innerElement = frameMarkup.substring(lessThan + 1, greaterThan),
-                        attributeStart = innerElement.lastIndexOf('="');
-                    
-                    if (attributeStart != -1 && innerElement.indexOf('"', attributeStart + 2) == -1)
-                        frameMarkup = frameMarkup.substring(0, greaterThan) + '"' + frameMarkup.substring(greaterThan, frameMarkup.length);
-                }
-                
-                lessThan = frameMarkup.indexOf('<', lessThan + 1);
-            }
-            
-            pageFrame.contentDocument.documentElement.innerHTML = frameMarkup;
-            
-            // Apply framed page title to parent
-            if (pageFrame.contentDocument.querySelector('title'))
-                document.title = pageFrame.contentDocument.querySelector('title').textContent + ' | ' + document.title;
-            else
-                document.title = list[targetID].url + ' | ' + document.title;
-            
-            // Remove the only image-loading attribute I know of
-            if (pageFrame.contentDocument.body.hasAttribute('background'))
-                pageFrame.contentDocument.body.removeAttribute('background');
-            
-            // Replicate functionality of a rare non-standard attribute meant to change the background color
-            if (pageFrame.contentDocument.body.hasAttribute('rgb'))
-                pageFrame.contentDocument.body.style.backgroundColor = pageFrame.contentDocument.body.getAttribute('rgb');
-            
-            // Disable all HTML forms
-            if (pageFrame.contentDocument.querySelector('form')) {
-                let frameForm = pageFrame.contentDocument.querySelectorAll('form');
-                
-                for (let i = 0; i < frameForm.length; i++)
-                    frameForm[i].replaceWith(...frameForm[i].childNodes);
-            }
-            
-            // Insert placeholder for <isindex>
-            if (pageFrame.contentDocument.querySelector('isindex')) {
-                let index = document.createElement('form'),
-                    topDivider = document.createElement('hr');
-                
-                index.setAttribute('onsubmit', 'return false');
-                index.appendChild(topDivider);
-                
-                if (pageFrame.contentDocument.querySelector('isindex').hasAttribute('prompt'))
-                    index.insertAdjacentText('beforeend', pageFrame.contentDocument.querySelector('isindex').getAttribute('prompt'));
-                else
-                    index.insertAdjacentText('beforeend', 'This is a searchable index. Enter search keywords: ');
-                
-                index.appendChild(document.createElement('input'));
-                index.appendChild(document.createElement('hr'));
-                
-                pageFrame.contentDocument.querySelector('isindex').insertAdjacentElement('afterbegin', index);
-            }
-            
-            // Grey out links that haven't been updated yet
-            let pageStyle = document.createElement('style');
-            pageStyle.textContent = 'a[href]:not([href^="#"]):not([local]) {filter: grayscale(1) opacity(0.5)}';
-            
-            pageFrame.contentDocument.documentElement.insertAdjacentElement('afterbegin', pageStyle);
-            
-            // Remove all <img> elements, replace with alt text
-            pageFrame.contentDocument.querySelectorAll('img').forEach(frameImage => {
-                if (frameImage.alt)
-                    frameImage.insertAdjacentText('afterend', frameImage.alt);
-                else if (frameImage.src && frameImage.src.length > 1)
-                    frameImage.insertAdjacentText('afterend', ' ' + frameImage.src.substring(frameImage.src.lastIndexOf("/") + 1) + ' ');
-                
-                frameImage.remove();
-            });
-            
-            // Prevent <base> from screwing with page links
-            if (pageFrame.contentDocument.querySelector('base'))
-                pageFrame.contentDocument.querySelector('base').remove();
-            
-            // Redirect links to archival sites
-            pageFrame.contentDocument.querySelectorAll('a[href]').forEach((frameLink, i) => {
-                setTimeout(() => {
-                    // Make sure link isn't an anchor
-                    if (!frameLink.getAttribute('href').startsWith('#')) {
-                        frameLink.setAttribute('local', 'false');
-                        frameLink.setAttribute('target', '_blank');
+                    // Check if destination exists within the archive
+                    if (list.findIndex(obj => obj.url === pageLink.href) != -1) {
+                        pageLink.setAttribute('local', 'true');
+                        pageLink.setAttribute('target', '_parent');
                         
-                        // Check if destination exists within the archive
-                        if (list.findIndex(obj => obj.url === frameLink.href) != -1) {
-                            frameLink.setAttribute('local', 'true');
-                            frameLink.setAttribute('target', '_parent');
-                            
-                            frameLink.href = window.location.pathname + '?url=' + frameLink.href;
-                            
-                            if (document.querySelector('#localLinks').disabled)
-                                document.querySelector('#localLinks').disabled = false;
-                        } else if (frameLink.href.includes('http://')) {
-                            let currentDomain = new URL(list[targetID].url).origin,
-                                linkDomain = new URL(frameLink.href).host;
-                            
-                            if (frameLink.getAttribute('href').startsWith('/'))
-                                frameLink.href = 'https://web.archive.org/web/0/' + currentDomain + frameLink.getAttribute('href');
-                            else if (linkDomain == window.location.hostname) {
-                                if (frameLink.href[-1] == '/')
-                                    frameLink.href = 'https://web.archive.org/web/0/' + list[targetID].url + '/' + frameLink.getAttribute('href');
-                                else
-                                    frameLink.href = 'https://web.archive.org/web/0/' + list[targetID].url.substring(0, list[targetID].url.lastIndexOf('/') + 1) + frameLink.getAttribute('href');
-                            } else
-                                frameLink.href = 'https://web.archive.org/web/0/' + frameLink.href;
-                            
-                            if (document.querySelector('#localLinks').checked)
-                                frameLink.style.opacity = '0.2';
-                        }
+                        pageLink.href = window.location.pathname + '?url=' + pageLink.href;
+                        
+                        if (document.querySelector('#localLinks').disabled)
+                            document.querySelector('#localLinks').disabled = false;
+                    } else if (pageLink.href.includes('http://')) {
+                        let currentDomain = new URL(list[targetID].url).origin,
+                            linkDomain = new URL(pageLink.href).host;
+                        
+                        if (pageLink.getAttribute('href').startsWith('/'))
+                            pageLink.href = 'https://web.archive.org/web/0/' + currentDomain + pageLink.getAttribute('href');
+                        else if (linkDomain == window.location.hostname) {
+                            if (pageLink.href[-1] == '/')
+                                pageLink.href = 'https://web.archive.org/web/0/' + list[targetID].url + '/' + pageLink.getAttribute('href');
+                            else
+                                pageLink.href = 'https://web.archive.org/web/0/' + list[targetID].url.substring(0, list[targetID].url.lastIndexOf('/') + 1) + pageLink.getAttribute('href');
+                        } else
+                            pageLink.href = 'https://web.archive.org/web/0/' + pageLink.href;
+                        
+                        if (document.querySelector('#localLinks').checked)
+                            pageLink.style.opacity = '0.2';
                     }
-                }, i);
-            });
-            
-            clearInterval(frameHandler);
-        }
-    }, 1);
+                }
+            }, 1);
+        });
+    };
 }
