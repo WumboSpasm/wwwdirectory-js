@@ -219,19 +219,21 @@ function updatePage(list) {
                         
                         if (document.querySelector('#localLinks').disabled)
                             document.querySelector('#localLinks').disabled = false;
-                    } else if (pageLink.href.includes('http://')) {
-                        let currentDomain = new URL(list[targetID].url).origin,
-                            linkDomain = new URL(pageLink.href).host;
-                        
-                        if (pageLink.getAttribute('href').startsWith('/'))
-                            pageLink.href = 'https://web.archive.org/web/0/' + currentDomain + pageLink.getAttribute('href');
-                        else if (linkDomain == window.location.hostname) {
-                            if (pageLink.href[-1] == '/')
-                                pageLink.href = 'https://web.archive.org/web/0/' + list[targetID].url + '/' + pageLink.getAttribute('href');
-                            else
-                                pageLink.href = 'https://web.archive.org/web/0/' + list[targetID].url.substring(0, list[targetID].url.lastIndexOf('/') + 1) + pageLink.getAttribute('href');
-                        } else
-                            pageLink.href = 'https://web.archive.org/web/0/' + pageLink.href;
+                    } else {
+                        if (pageLink.href.includes('http://')) {
+                            let currentDomain = new URL(list[targetID].url).origin,
+                                linkDomain = new URL(pageLink.href).host;
+                            
+                            if (pageLink.getAttribute('href').startsWith('/'))
+                                pageLink.href = 'https://web.archive.org/web/0/' + currentDomain + pageLink.getAttribute('href');
+                            else if (linkDomain == window.location.hostname) {
+                                if (pageLink.href[-1] == '/')
+                                    pageLink.href = 'https://web.archive.org/web/0/' + list[targetID].url + '/' + pageLink.getAttribute('href');
+                                else
+                                    pageLink.href = 'https://web.archive.org/web/0/' + list[targetID].url.substring(0, list[targetID].url.lastIndexOf('/') + 1) + pageLink.getAttribute('href');
+                            } else
+                                pageLink.href = 'https://web.archive.org/web/0/' + pageLink.href;
+                        }
                         
                         if (document.querySelector('#localLinks').checked)
                             pageLink.style.opacity = '0.2';

@@ -24,7 +24,7 @@ pre#page {
     white-space: pre-wrap;
     margin: 0;
 }
-div#page :first-child {
+div#page > :where(h1, h2, h3, h4, h5, h6):first-child {
     margin-top: 0;
 }
 div#page a[href]:not([href^="#"]):not([local]) {
