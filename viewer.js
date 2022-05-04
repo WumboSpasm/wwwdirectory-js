@@ -4,8 +4,8 @@
 let listRequest = new XMLHttpRequest();
 listRequest.open('GET', 'list.json');
 listRequest.responseType = 'json';
-listRequest.onload = function() {updatePage(this.response)};
 listRequest.send();
+listRequest.onload = function() {updatePage(this.response)};
 
 function updatePage(list) {
     /*------------------+
@@ -24,8 +24,16 @@ function updatePage(list) {
     /*--------------------------+
      | Insert data into sidebar |
      +--------------------------*/
-    document.querySelector('#pageInfo img').src = 'image/' + targetID + '.png';
-    document.querySelector('#imageExpand img').src = 'image/' + targetID + '.png';
+    // Screenshot
+    let imageRequest = new XMLHttpRequest();
+    imageRequest.open('GET', 'https://archive.org/download/jamsapresswwwdirectory/jamsawww.zip/image/' + targetID + '.png');
+    imageRequest.responseType = 'blob';
+    imageRequest.send();
+    imageRequest.onload = function() {
+        let imageURL = URL.createObjectURL(this.response);
+        document.querySelector('#pageInfo img').src = imageURL;
+        document.querySelector('#imageExpand img').src = imageURL;
+    };
     // URL text
     document.querySelector('#pageURL b').textContent = list[targetID].url;
     // [Search domain]
@@ -66,10 +74,9 @@ function updatePage(list) {
      | Load page data |
      +----------------*/
     let pageRequest = new XMLHttpRequest();
-    pageRequest.open('GET', 'hypertext/' + targetID + '.htm');
+    pageRequest.open('GET', 'https://archive.org/download/jamsapresswwwdirectory/jamsawww.zip/hypertext/' + targetID + '.htm');
     pageRequest.responseType = 'text';
     pageRequest.send();
-    
     pageRequest.onload = function() {
         /*-------------------+
          | Handle checkboxes |
@@ -189,7 +196,7 @@ function updatePage(list) {
         });
         
         // Remove unneeded HTML tags/elements
-        let unneededElements = [ 'head', 'header', 'link' ],
+        let unneededElements = [ 'head', 'header', 'link', 'meta' ],
             unneededTags = [ 'title', 'base' ];
         
         pageDocument.querySelectorAll('*').forEach(node => {
