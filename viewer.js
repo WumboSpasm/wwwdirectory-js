@@ -43,7 +43,7 @@ function updatePage(list) {
     // [View live URL]
     document.querySelectorAll('#pageLinks a')[1].href = list[targetID].url;
     // [View raw HTML]
-    document.querySelectorAll('#pageLinks a')[2].href = 'hypertext/' + targetID + '.htm';
+    document.querySelectorAll('#pageLinks a')[2].href = 'https://archive.org/download/jamsapresswwwdirectory/jamsawww.zip/hypertext/' + targetID + '.htm';
     // Category
     document.querySelector('#pageCategory a').textContent = list[targetID].category;
     document.querySelector('#pageCategory a').href = 'results.html?category=' + list[targetID].category;
@@ -150,14 +150,6 @@ function updatePage(list) {
         if (pageDocument.body.hasAttribute('rgb'))
             pageDocument.body.style.backgroundColor = pageDocument.body.getAttribute('rgb');
         
-        // Disable all HTML forms
-        if (pageDocument.querySelector('form')) {
-            let pageForm = pageDocument.querySelectorAll('form');
-            
-            for (let i = 0; i < pageForm.length; i++)
-                pageForm[i].replaceWith(...pageForm[i].childNodes);
-        }
-        
         // Insert placeholder for <isindex>
         if (pageDocument.querySelector('isindex')) {
             let index = document.createElement('form'),
@@ -196,7 +188,7 @@ function updatePage(list) {
         });
         
         // Remove unneeded HTML tags/elements
-        let unneededElements = [ 'head', 'header', 'link', 'meta' ],
+        let unneededElements = [ 'head', 'header', 'link', 'meta', 'form' ],
             unneededTags = [ 'title', 'base' ];
         
         pageDocument.querySelectorAll('*').forEach(node => {
