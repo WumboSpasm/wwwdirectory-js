@@ -37,7 +37,7 @@ function updatePage(list) {
     // URL text
     document.querySelector('#pageURL b').textContent = list[targetID].url;
     // [Search domain]
-    document.querySelector('#pageURL a').href = 'results.html?domain=' + list[targetID].url.substr(7, list[targetID].url.indexOf('/', 7) - 7);
+    document.querySelector('#pageURL a').href = 'results.html?domain=' + list[targetID].url.substring(7, list[targetID].url.indexOf('/', 7));
     // [View on Wayback Machine]
     document.querySelectorAll('#pageLinks a')[0].href = 'https://web.archive.org/web/0/' + list[targetID].url;
     // [View live URL]
@@ -204,39 +204,35 @@ function updatePage(list) {
         // Redirect links to archival sites
         document.querySelectorAll('div#page a[href]').forEach((pageLink) => {
             setTimeout(() => {
-                // Make sure link isn't an anchor
-                if (!pageLink.getAttribute('href').startsWith('#')) {
+                let href = pageLink.getAttribute('href');
+                
+                // Convert relative link to absolute link
+                if (!(href.includes('://') || href.startsWith('#'))) {
+                    if (href.startsWith('/'))
+                        href = new URL(list[targetID].url).origin + href;
+                    else
+                        href = list[targetID].url.substring(0, list[targetID].url.lastIndexOf('/')) + '/' + href;
+                }
+                
+                // Redirect pages that exist in the archive to the viewer
+                if (list.findIndex(obj => obj.url === href) != -1) {
+                    pageLink.setAttribute('local', 'true');
+                    pageLink.setAttribute('target', '_parent');
+                    
+                    pageLink.href = window.location.pathname + '?url=' + href;
+                    
+                    if (document.querySelector('#localLinks').disabled)
+                        document.querySelector('#localLinks').disabled = false;
+                } else {
                     pageLink.setAttribute('local', 'false');
                     pageLink.setAttribute('target', '_blank');
                     
-                    // Check if destination exists within the archive
-                    if (list.findIndex(obj => obj.url === pageLink.href) != -1) {
-                        pageLink.setAttribute('local', 'true');
-                        pageLink.setAttribute('target', '_parent');
-                        
-                        pageLink.href = window.location.pathname + '?url=' + pageLink.href;
-                        
-                        if (document.querySelector('#localLinks').disabled)
-                            document.querySelector('#localLinks').disabled = false;
-                    } else {
-                        if (pageLink.href.includes('http://')) {
-                            let currentDomain = new URL(list[targetID].url).origin,
-                                linkDomain = new URL(pageLink.href).host;
-                            
-                            if (pageLink.getAttribute('href').startsWith('/'))
-                                pageLink.href = 'https://web.archive.org/web/0/' + currentDomain + pageLink.getAttribute('href');
-                            else if (linkDomain == window.location.hostname) {
-                                if (pageLink.href[-1] == '/')
-                                    pageLink.href = 'https://web.archive.org/web/0/' + list[targetID].url + '/' + pageLink.getAttribute('href');
-                                else
-                                    pageLink.href = 'https://web.archive.org/web/0/' + list[targetID].url.substring(0, list[targetID].url.lastIndexOf('/') + 1) + pageLink.getAttribute('href');
-                            } else
-                                pageLink.href = 'https://web.archive.org/web/0/' + pageLink.href;
-                        }
-                        
-                        if (document.querySelector('#localLinks').checked)
-                            pageLink.style.opacity = '0.2';
-                    }
+                    // Redirect pages that don't exist in the archive to Wayback Machine
+                    if (href.startsWith('http://'))
+                        pageLink.href = 'https://web.archive.org/web/0/' + href;
+                    
+                    if (document.querySelector('#localLinks').checked)
+                        pageLink.style.opacity = '0.2';
                 }
             }, 1);
         });

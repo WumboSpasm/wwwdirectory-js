@@ -28,8 +28,8 @@ function handleQuery(list) {
     // Perform query and store URLs found in list into an array
     let resultURLs = [];
     
-    for (let i = 1; i <= 8046; i++)
-        if (query.get('domain') == list[i].url.substr(7, list[i].url.indexOf('/', 7) - 7))
+    for (let i = 1; i < list.length; i++)
+        if (query.get('domain').toLowerCase() == list[i].url.substr(7, list[i].url.indexOf('/', 7) - 7).toLowerCase())
             resultURLs.push(list[i].url)
         else if (query.get('category') == list[i].category || query.get('category') == 'All')
             resultURLs.push(list[i].url)
