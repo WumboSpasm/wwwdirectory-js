@@ -67,17 +67,132 @@ div#page a[href]:not([href^="#"]):not([local]) {
 #pageURL span {
     display: inline-block;
 }
+#pageLinks {
+    margin-bottom: 8px;
+}
 #pageOptions {
-    margin: 8px 0 6px;
+    margin-top: 8px;
+}
+#pageOptions input {
+    margin-left: 0;
 }
 #pageNavigation,
 #pageIndex {
     text-align: center;
-    margin-top: 16px;
+    margin-top: 12px;
 }
 #localLinks {
     margin-left: 0;
 }
-#pageCategory {
-    margin-bottom: 4px;
+
+/*-----------------------+
+ | Embedded page styling |
+ +-----------------------*/
+
+/* General */
+div#page[netscape="true"] {
+    font-family: Times New Roman, serif;
+    font-size: 16px;
+    background-color: #C0C0C0;
+    color: #000;
+}
+/* Links */
+div#page[netscape="true"] a:link {
+    color: #00E;
+}
+div#page[netscape="true"] a:link:active {
+    color: #F00;
+}
+div#page[netscape="true"] a:link:visited {
+    color: #551A8B;
+}
+/* Pre-formatted text */
+div#page[netscape="true"] pre {
+    white-space: pre;
+    font-family: monospace;
+    font-size: 12px;
+}
+/* Text input boxes */
+div#page[netscape="true"] input[type="text"],
+div#page[netscape="true"] input:not([type]) {
+    all: unset;
+    height: 17px;
+    background-color: #FFF;
+    border: 1px solid #000;
+    font-size: 14px;
+    padding: 0 2px;
+}
+div#page[netscape="true"] input[type="text"]:not([size]),
+div#page[netscape="true"] input:not([type]):not([size]) {
+    width: 168px;
+}
+/* Buttons */
+div#page[netscape="true"] input[type="submit"],
+div#page[netscape="true"] input[type="reset"] {
+    all: unset;
+    height: 22px;
+    border: 1px solid #000;
+    border-radius: 3px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    box-shadow: 2px 2px #FFF inset, -2px -2px #808080 inset;
+    user-select: none;
+}
+div#page[netscape="true"] input[type="submit"] {
+    padding: 0 10px;
+}
+div#page[netscape="true"] input[type="reset"] {
+    padding: 0 8px;
+}
+div#page[netscape="true"] input[type="submit"]:active,
+div#page[netscape="true"] input[type="reset"]:active {
+    box-shadow: 2px 2px #808080 inset, -2px -2px #FFF inset;
+}
+/* Checkboxes */
+div#page[netscape="true"] input[type="checkbox"] {
+    all: unset;
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    background-color: #FFF;
+    border: 1px solid #000;
+    margin: 0 3px;
+}
+div#page[netscape="true"] input[type="checkbox"]:checked {
+    /* https://stackoverflow.com/a/28974253 */
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 22 22'><path d='M 1 0 L 1 0 L 0 0 L 0 1 L 21 22 L 22 22 L 22 21' fill='black' /><path d='M 21 0 L 21 0 L 22 0 L 22 1 L 1 22 L 0 22 L 0 21' fill='black' /></svg>");
+    background-color: #FFF;
+}
+/* Radio buttons */
+div#page[netscape="true"] input[type="radio"] {
+    all: unset;
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background-color: #FFF;
+    border: 2px solid #FFF;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px #000;
+    margin: 0 5px;
+}
+div#page[netscape="true"] input[type="radio"]:checked {
+    background-color: #000;
+}
+/* Dropdown menus */
+div#page[netscape="true"] select {
+    all: unset;
+    height: 22px;
+    background-color: #FFF;
+    border: 1px solid #000;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    padding-left: -3px;
+}
+div#page[netscape="true"] select::after {
+    display: inline-block;
+    width: 15px;
+    height: 22px;
+    border: 1px solid #000;
+    content: "&#x2193;";
+    text-decoration: underline;
 }

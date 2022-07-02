@@ -96,6 +96,12 @@ function updatePage(list) {
         
         document.querySelector('#markupView').addEventListener('click', toggleMarkupView);
         
+        // Netscape style
+        document.querySelector('#netscapeStyle').addEventListener('click', () => {
+            let bool = document.querySelector('div#page').getAttribute('netscape');
+            document.querySelector('div#page').setAttribute('netscape', bool == 'false' ? 'true' : 'false');
+        });
+        
         /*----------------------+
          | Handle embedded page |
          +----------------------*/
