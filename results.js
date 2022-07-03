@@ -11,47 +11,76 @@ request.send();
  | Display query results |
  +-----------------------*/
 function handleQuery(list) {
-    // Apply header based on query type
-    let query = new URLSearchParams(location.search);
+    // Get query strings
+    let query = new URLSearchParams(location.search),
+        includes = query.get('includes'),
+        keyword  = query.get('keyword'),
+        category = query.get('category');
     
-    if (query.has('domain'))
-        document.querySelector('#query').textContent = 'Domain: ' + query.get('domain')
-    else if (query.has('category'))
-        document.querySelector('#query').textContent = 'Category: ' + query.get('category')
-    else if (query.has('keyword'))
-        document.querySelector('#query').textContent = 'Keyword: ' + query.get('keyword')
-    else {
-        alert('Invalid query!');
-        window.location.replace('index.html');
-    }
+    // Hide subheader container if there are no parameters
+    if (!(includes || keyword || category))
+        document.querySelector('#resultsHeader table').style.display = 'none';
+    
+    // Populate subheader
+    let table = document.querySelector('#resultsHeader table');
+    
+    if (includes)
+        addTableRow(table, new Text('Title/URL includes: '), new Text(includes));
+    if (keyword)
+        addTableRow(table, new Text('Has keyword: '), new Text(keyword));
+    if (category)
+        addTableRow(table, new Text('In category: '), new Text(category));
     
     // Perform query and store URLs found in list into an array
-    let resultURLs = [];
+    let resultPages = [];
     
-    for (let i = 1; i < list.length; i++)
-        if (query.get('domain') && (query.get('domain').toLowerCase() == list[i].url.substr(7, list[i].url.indexOf('/', 7) - 7).toLowerCase()))
-            resultURLs.push(list[i].url)
-        else if (query.get('category') == list[i].category || query.get('category') == 'All')
-            resultURLs.push(list[i].url)
-        else if (list[i].keyword.includes(query.get('keyword')) && !query.get('category'))
-            resultURLs.push(list[i].url);
+    for (let i = 1; i < list.length; i++) {
+        let parsedTitle = new DOMParser().parseFromString(list[i].title, 'text/html').body.textContent;
+        
+        if (includes &&
+            !parsedTitle.toLowerCase().includes(includes.toLowerCase()) &&
+            !list[i].url.toLowerCase().includes(includes.toLowerCase())
+           )
+            continue;
+        if (keyword && !list[i].keyword.includes(keyword))
+            continue;
+        if (category && category != 'All' && category != list[i].category)
+            continue;
+        
+        resultPages.push([parsedTitle, list[i].url]);
+    }
     
     // Display message if no URLs were found in list
-    if (resultURLs.length == 0) {
+    if (resultPages.length == 0) {
         document.querySelector('#results').textContent = 'No results :(';
         return;
     }
     
     // Sort URLs alphabetically
-    resultURLs.sort();
+    resultPages.sort((a, b) => a[0].toLowerCase() > b[0].toLowerCase());
     
     // Display results on page
-    for (let i = 0; i < resultURLs.length; i++) {
-        let result = document.createElement('a');
-        // Fix problematic characters
-        result.href = 'viewer.html?url=' + resultURLs[i].replaceAll('#', '%23').replaceAll('&', '%26');
-        result.textContent = resultURLs[i];
+    for (let i = 0; i < resultPages.length; i++) {
+        let resultLink = document.createElement('a');
+        resultLink.href = 'viewer.html?url=' + resultPages[i][1].replaceAll('#', '%23').replaceAll('&', '%26');
+        resultLink.textContent = 'Go';
         
-        document.querySelector('#results').insertAdjacentElement('beforeend', result);
+        addTableRow(document.querySelector('#results'), new Text(resultPages[i][0]), new Text(resultPages[i][1]), resultLink);
     }
+}
+
+/*-------------------+
+ | Helpful functions |
+ +-------------------*/
+// Add rows to desired table
+function addTableRow(table, ...args) {
+    let row = document.createElement('tr');
+    
+    for (let i = 0; i < args.length; i++) {
+        item = document.createElement('td');
+        item.appendChild(args[i]);
+        row.appendChild(item);
+    }
+    
+    table.appendChild(row);
 }

@@ -37,7 +37,7 @@ function updatePage(list) {
     // URL text
     document.querySelector('#pageURL b').textContent = list[targetID].url;
     // [Search domain]
-    document.querySelector('#pageURL a').href = 'results.html?domain=' + list[targetID].url.substring(7, list[targetID].url.indexOf('/', 7));
+    document.querySelector('#pageURL a').href = 'results.html?includes=' + list[targetID].url.substring(7, list[targetID].url.indexOf('/', 7));
     // [View on Wayback Machine]
     document.querySelectorAll('#pageLinks a')[0].href = 'https://web.archive.org/web/0/' + list[targetID].url;
     // [View live URL]
@@ -137,8 +137,8 @@ function updatePage(list) {
         }
         
         // Apply page title to parent
-        if (pageDocument.querySelector('title'))
-            document.title = pageDocument.querySelector('title').textContent + ' | ' + document.title;
+        if (list[targetID].title != '')
+            document.title = list[targetID].title + ' | ' + document.title;
         else
             document.title = list[targetID].url + ' | ' + document.title;
         

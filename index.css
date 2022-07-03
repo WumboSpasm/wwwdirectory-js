@@ -19,6 +19,9 @@ select {
 input {
     width: 192px;
 }
+table {
+    margin: 0 auto;
+}
 #info {
     width: 600px;
     text-align: justify;
@@ -36,6 +39,10 @@ input {
     margin: 4px;
     line-height: 0;
 }
+#search button {
+    display: block;
+    margin: 0 auto;
+}
 #highlights {
     width: 400px;
     text-align: center;
@@ -45,14 +52,38 @@ input {
     display: inline-block;
 }
 #resultsHeader {
-    margin: 0 auto 20px;
+    margin: 0 auto;
+}
+#resultsHeader table {
+    font-size: 20px;
+    border: none;
+}
+#resultsHeader td {
+    padding: 0 4px;
+}
+#resultsHeader td:first-child {
+    text-align: right;
+}
+#resultsHeader td:last-child {
+    text-align: left;
 }
 #results {
-    display: inline-block;
-    width: initial;
-    white-space: pre;
+    width: 1000px;
+    border: 1px solid #000;
+    border-collapse: collapse;
+    margin: 20px auto;
+    table-layout: fixed;
+}
+#results th,
+#results td {
+    padding: 2px 4px;
+    border: 1px solid #000;
+}
+#results th:last-child {
+    width: 40px;
+}
+#results td:not(:last-child) {
     text-align: left;
-    margin-bottom: 8px;
 }
 #results a::after {
     content: "\A";

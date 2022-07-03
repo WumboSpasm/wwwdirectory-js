@@ -7,13 +7,12 @@ request.responseType = 'json';
 request.onload = function() {populateDropdown(this.response)};
 request.send();
 
-/*------------------------+
- | Handle category search |
- +------------------------*/
+/*--------------------+
+ | Display categories |
+ +--------------------*/
 function populateDropdown(list) {
     let categorySelect = document.querySelector('#category');
     
-    // Populate dropdown menu with options
     for (let i = 1; i <= 8046; i++) {
         for (let j = 0; j < categorySelect.options.length; j++) {
             if (categorySelect.options[j].value == list[i].category)
@@ -27,20 +26,26 @@ function populateDropdown(list) {
             }
         }
     }
-    
-    document.querySelector('button').addEventListener('click', () => {
-        window.location.href = 'results.html?category=' + categorySelect.options[categorySelect.selectedIndex].value;
-    });
 }
 
-/*----------------------+
- | Handle domain search |
- +----------------------*/
-document.querySelectorAll('button')[1].addEventListener('click', () => {
-    if (document.querySelector('#domain').value)
-        window.location.href = 'results.html?domain=' + document.querySelector('#domain').value;
-});
-document.querySelector('#domain').addEventListener('keydown', key => {
-    if (key.code == 'Enter' && document.querySelector('#domain').value)
-        window.location.href = 'results.html?domain=' + document.querySelector('#domain').value;
-});
+/*--------------+
+ | Generate URL |
+ +--------------*/
+function generateURL() {
+    let searchIncludes = !!document.querySelector('#includes').value,
+        searchKeyword = !!document.querySelector('#keyword').value;
+    
+    let querySegments = [];
+    
+    if (searchIncludes)
+        querySegments.push('includes=' + encodeURIComponent(document.querySelector('#includes').value));
+    if (searchKeyword)
+        querySegments.push('keyword=' + encodeURIComponent(document.querySelector('#keyword').value));
+    if (document.querySelector('#category').value != 'All')
+        querySegments.push('category=' + document.querySelector('#category').value);
+    
+    window.location.href = 'results.html' + (querySegments.length > 0 ? ('?' + querySegments.join('&')) : '');
+}
+
+document.querySelector('#search button').addEventListener('click', () => { generateURL() });
+document.querySelector('#search').addEventListener('keydown', key => { if (key.code == 'Enter') generateURL(); });
