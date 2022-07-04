@@ -56,8 +56,11 @@ function handleQuery(list) {
         return;
     }
     
-    // Sort URLs alphabetically
-    resultPages.sort((a, b) => a[0].toLowerCase() > b[0].toLowerCase());
+    // Sort results by title, then URL if titles match
+    resultPages.sort((a, b) => {
+        let c = a[0].localeCompare(b[0]);
+        return c == 0 ? a[1].localeCompare(b[1]) : c;
+    });
     
     // Display results on page
     for (let i = 0; i < resultPages.length; i++) {

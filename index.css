@@ -80,10 +80,13 @@ table {
     border: 1px solid #000;
 }
 #results th:last-child {
-    width: 40px;
+    width: 20px;
 }
 #results td:not(:last-child) {
     text-align: left;
+}
+#results td:nth-child(2) {
+    word-break: break-all;
 }
 #results a::after {
     content: "\A";
